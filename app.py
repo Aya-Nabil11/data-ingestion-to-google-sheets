@@ -1,19 +1,21 @@
 from flask import Flask, request
 import gspread
+import json
+import os
 from google.oauth2.service_account import Credentials
 
 app = Flask(__name__)
 
 # ---------- Google Sheets ----------
-scopes = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-creds = Credentials.from_service_account_file(
-    "credentials.json",
-    scopes=scopes
-)
+# Use environment variable for credentials (Render), fallback to local file (development)
+creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+if creds_json:
+    creds_dict = json.loads(creds_json)
+    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+else:
+    creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
 
 client = gspread.authorize(creds)
 sheet = client.open_by_key("10LnRcF12BXFhBwBHx1rKiNAxIpJJRA_0ZsmjY4_oA44").sheet1
@@ -64,7 +66,6 @@ def submit():
 
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)
 
